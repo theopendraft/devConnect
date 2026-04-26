@@ -23,8 +23,18 @@ const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', 
 app.use(cors());
 app.use(express.json());
 
+// Health Check / Connection Status
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    supabase: !!process.env.SUPABASE_URL,
+    env: process.env.NODE_ENV
+  });
+});
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 // Routes
-app.get('/api/posts', async (req, res) => {
+const getPosts = async (req, res) => {
   try {
     // Attempt complex join
     const { data: posts, error } = await supabase
@@ -39,7 +49,6 @@ app.get('/api/posts', async (req, res) => {
       
     if (error) {
       console.error('Complex query failed, falling back to simple query:', error.message);
-      // Fallback to simple query if relationships are broken
       const { data: simplePosts, error: simpleError } = await supabase
         .from('posts')
         .select('*')
@@ -63,7 +72,10 @@ app.get('/api/posts', async (req, res) => {
     console.error('Fatal fetch error:', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-});
+};
+
+app.get('/api/posts', getPosts);
+app.get('/posts', getPosts);
 
 app.post('/api/posts', authMiddleware, async (req, res) => {
   try {
