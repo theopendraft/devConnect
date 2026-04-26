@@ -26,30 +26,41 @@ app.use(express.json());
 // Routes
 app.get('/api/posts', async (req, res) => {
   try {
+    // Attempt complex join
     const { data: posts, error } = await supabase
       .from('posts')
       .select(`
         *,
         profile:profiles!user_id (username, avatar_url),
-        likes_count:post_likes(count)
+        likes_count:post_likes!fk_post_likes_post(count)
       `)
       .order('created_at', { ascending: false })
       .limit(50);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Complex query failed, falling back to simple query:', error.message);
+      // Fallback to simple query if relationships are broken
+      const { data: simplePosts, error: simpleError } = await supabase
+        .from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (simpleError) throw simpleError;
+      return res.json(simplePosts.map(p => ({ ...p, likes_count: 0, username: p.user_email?.split('@')[0] || 'dev' })));
+    }
 
-    // Format the response to flatten count and handle missing profiles
     const formattedPosts = posts.map(post => ({
       ...post,
-      username: post.profile?.username || post.user_email.split('@')[0],
+      username: post.profile?.username || post.user_email?.split('@')[0] || 'dev',
       avatar_url: post.profile?.avatar_url,
       likes_count: post.likes_count?.[0]?.count || 0
     }));
 
     res.json(formattedPosts);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error fetching posts' });
+    console.error('Fatal fetch error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
@@ -85,12 +96,24 @@ app.get('/api/posts/user/:userId', async (req, res) => {
     const { userId } = req.params;
     const { data: posts, error } = await supabase
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        profile:profiles!user_id (username, avatar_url),
+        likes_count:post_likes!fk_post_likes_post(count)
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(posts || []);
+    
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      username: post.profile?.username || 'unknown',
+      avatar_url: post.profile?.avatar_url,
+      likes_count: post.likes_count?.[0]?.count || 0
+    }));
+
+    res.json(formattedPosts);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error fetching user posts' });
@@ -116,7 +139,7 @@ app.get('/api/search', async (req, res) => {
       .select(`
         *,
         profile:profiles!user_id (username, avatar_url),
-        likes_count:post_likes(count)
+        likes_count:post_likes!fk_post_likes_post(count)
       `)
       .ilike('content', `%${q}%`)
       .order('created_at', { ascending: false })
