@@ -31,7 +31,7 @@ app.get('/api/posts', async (req, res) => {
       .from('posts')
       .select(`
         *,
-        profile:profiles!user_id (username, avatar_url),
+        profile:profiles!fk_user_profile (username, avatar_url),
         likes_count:post_likes!fk_post_likes_post(count)
       `)
       .order('created_at', { ascending: false })
