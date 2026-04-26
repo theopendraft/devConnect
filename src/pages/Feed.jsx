@@ -23,7 +23,12 @@ export default function Feed({ session }) {
   const fetchPosts = async () => {
     try {
       const res = await axios.get(`${API_URL}/posts`);
-      setPosts(res.data);
+      if (Array.isArray(res.data)) {
+        setPosts(res.data);
+      } else {
+        console.error('Invalid API response:', res.data);
+        setError('Server returned invalid data format.');
+      }
     } catch (err) {
       setError('Failed to load posts.');
     } finally {
