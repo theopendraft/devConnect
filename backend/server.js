@@ -66,6 +66,75 @@ app.post('/api/posts', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/posts/user/:userId - Fetch posts for a specific user
+app.get('/api/posts/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(posts || []);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error fetching user posts' });
+  }
+});
+
+// GET /api/posts/search - Search for posts
+app.get('/api/posts/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.json([]);
+
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select('*')
+      .ilike('content', `%${q}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(posts || []);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error searching posts' });
+  }
+});
+
+// PATCH /api/posts/:postId/like - Increment likes_count
+app.patch('/api/posts/:postId/like', authMiddleware, async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    // First fetch current like count
+    const { data: post, error: fetchError } = await supabase
+      .from('posts')
+      .select('likes_count')
+      .eq('id', postId)
+      .single();
+
+    if (fetchError || !post) throw fetchError || new Error('Post not found');
+
+    const newLikes = (post.likes_count || 0) + 1;
+
+    const { data: updatedPost, error: updateError } = await supabase
+      .from('posts')
+      .update({ likes_count: newLikes })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    res.json(updatedPost);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error liking post' });
+  }
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

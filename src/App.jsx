@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { supabase } from './lib/supabase';
 import Auth from './pages/Auth';
 import Feed from './pages/Feed';
+import Profile from './pages/Profile';
+import Search from './pages/Search';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -27,8 +29,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-zinc-950 items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+      <div className="flex min-h-screen bg-black items-center justify-center">
+        <div className="w-8 h-8 rounded-md border-2 border-white/20 border-t-white animate-spin"></div>
       </div>
     );
   }
@@ -43,6 +45,14 @@ export default function App() {
         <Route 
           path="/feed" 
           element={session ? <Feed session={session} /> : <Navigate to="/" />} 
+        />
+        <Route 
+          path="/profile" 
+          element={session ? <Profile session={session} /> : <Navigate to="/" />} 
+        />
+        <Route 
+          path="/search" 
+          element={session ? <Search /> : <Navigate to="/" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
