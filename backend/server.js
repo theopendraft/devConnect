@@ -28,12 +28,25 @@ app.get('/api/posts', async (req, res) => {
   try {
     const { data: posts, error } = await supabase
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        profile:profiles!user_id (username, avatar_url),
+        likes_count:post_likes(count)
+      `)
       .order('created_at', { ascending: false })
       .limit(50);
       
     if (error) throw error;
-    res.json(posts || []);
+
+    // Format the response to flatten count and handle missing profiles
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      username: post.profile?.username || post.user_email.split('@')[0],
+      avatar_url: post.profile?.avatar_url,
+      likes_count: post.likes_count?.[0]?.count || 0
+    }));
+
+    res.json(formattedPosts);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error fetching posts' });
@@ -84,54 +97,82 @@ app.get('/api/posts/user/:userId', async (req, res) => {
   }
 });
 
-// GET /api/posts/search - Search for posts
-app.get('/api/posts/search', async (req, res) => {
+// Unified Search: Profiles and Posts
+app.get('/api/search', async (req, res) => {
   try {
     const { q } = req.query;
-    if (!q) return res.json([]);
+    if (!q) return res.json({ users: [], posts: [] });
 
-    const { data: posts, error } = await supabase
+    // Search Profiles
+    const { data: users, error: userError } = await supabase
+      .from('profiles')
+      .select('id, username, description, avatar_url')
+      .ilike('username', `%${q}%`)
+      .limit(10);
+
+    // Search Posts (with profile joins)
+    const { data: posts, error: postError } = await supabase
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        profile:profiles!user_id (username, avatar_url),
+        likes_count:post_likes(count)
+      `)
       .ilike('content', `%${q}%`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(20);
 
-    if (error) throw error;
-    res.json(posts || []);
+    if (userError || postError) throw userError || postError;
+
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      username: post.profile?.username || post.user_email.split('@')[0],
+      avatar_url: post.profile?.avatar_url,
+      likes_count: post.likes_count?.[0]?.count || 0
+    }));
+
+    res.json({ users: users || [], posts: formattedPosts });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error searching posts' });
+    res.status(500).json({ error: 'Server error during search' });
   }
 });
 
-// PATCH /api/posts/:postId/like - Increment likes_count
-app.patch('/api/posts/:postId/like', authMiddleware, async (req, res) => {
+// POST /api/posts/:postId/toggle-like - Add or remove a like
+app.post('/api/posts/:postId/toggle-like', authMiddleware, async (req, res) => {
   try {
     const { postId } = req.params;
+    const userId = req.user.sub;
 
-    // First fetch current like count
-    const { data: post, error: fetchError } = await supabase
-      .from('posts')
-      .select('likes_count')
-      .eq('id', postId)
+    // Check if like exists
+    const { data: existingLike, error: checkError } = await supabase
+      .from('post_likes')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
       .single();
 
-    if (fetchError || !post) throw fetchError || new Error('Post not found');
+    if (checkError && checkError.code !== 'PGRST116') throw checkError;
 
-    const newLikes = (post.likes_count || 0) + 1;
-
-    const { data: updatedPost, error: updateError } = await supabase
-      .from('posts')
-      .update({ likes_count: newLikes })
-      .eq('id', postId)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
-    res.json(updatedPost);
+    if (existingLike) {
+      // Unlike
+      const { error: deleteError } = await supabase
+        .from('post_likes')
+        .delete()
+        .eq('id', existingLike.id);
+      if (deleteError) throw deleteError;
+      return res.json({ action: 'unliked' });
+    } else {
+      // Like
+      const { error: insertError } = await supabase
+        .from('post_likes')
+        .insert([{ post_id: postId, user_id: userId }]);
+      if (insertError) throw insertError;
+      return res.json({ action: 'liked' });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error liking post' });
+    res.status(500).json({ error: 'Server error toggling like' });
   }
 });
 
@@ -150,6 +191,24 @@ app.delete('/api/posts/:postId', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error deleting post' });
+  }
+});
+
+// GET /api/profiles/:userId - Fetch profile details
+app.get('/api/profiles/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    res.json(profile || { username: 'unknown', description: '' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error fetching profile' });
   }
 });
 
