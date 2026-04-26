@@ -36,6 +36,20 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  if (!supabase) {
+    return (
+      <div className="flex flex-col min-h-screen bg-black items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+        </div>
+        <h1 className="text-xl font-bold text-white mb-2">Configuration Missing</h1>
+        <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">
+          The Supabase connection keys are missing in Vercel. Please add <code className="text-zinc-300">VITE_SUPABASE_URL</code> and <code className="text-zinc-300">VITE_SUPABASE_ANON_KEY</code> to your environment variables.
+        </p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen bg-black items-center justify-center">
