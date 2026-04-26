@@ -100,18 +100,25 @@ export default function Feed({ session }) {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-400/10 border border-red-400/20 rounded-xl text-red-400 text-sm">
-              {error}
+            <div className="p-6 border border-red-500/20 bg-red-500/5 rounded-2xl text-center">
+              <p className="text-red-400 text-sm font-medium mb-1">Feed Sync Interrupted</p>
+              <p className="text-zinc-600 text-xs mb-4">Error: {error}</p>
+              <button onClick={fetchPosts} className="text-xs text-zinc-100 px-4 py-2 bg-white/5 rounded-md hover:bg-white/10 transition-colors">Retry Connection</button>
             </div>
           )}
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 text-zinc-400 animate-spin" />
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 className="w-8 h-8 text-zinc-800 animate-spin" />
+              <span className="text-[10px] text-zinc-700 uppercase tracking-[0.2em]">Authenticating Stream...</span>
             </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">
-              No posts yet. Be the first!
+          ) : posts.length === 0 && !error ? (
+            <div className="text-center py-20 border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+              <div className="w-12 h-12 bg-zinc-900/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                 <Loader2 className="w-5 h-5 text-zinc-800" />
+              </div>
+              <p className="text-zinc-400 text-sm font-medium">The feed is currently silent.</p>
+              <p className="text-zinc-600 text-xs mt-1">If this is unexpected, check your network connection.</p>
             </div>
           ) : (
             posts.map(post => (
