@@ -57,6 +57,7 @@ app.get('/api/posts', async (req, res) => {
       likes_count: post.likes_count?.[0]?.count || 0
     }));
 
+    console.log(`Successfully fetched ${formattedPosts.length} posts.`);
     res.json(formattedPosts);
   } catch (err) {
     console.error('Fatal fetch error:', err);
