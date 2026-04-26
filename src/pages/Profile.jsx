@@ -4,9 +4,7 @@ import { Loader2, Mail, Layout } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 
-const API_URL = import.meta.env.MODE === 'development' 
-  ? 'http://localhost:5000/api' 
-  : '/api';
+const API_URL = '/api';
 
 export default function Profile({ session }) {
   const [profile, setProfile] = useState(null);
@@ -23,14 +21,24 @@ export default function Profile({ session }) {
   const fetchProfileAndPosts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [profileRes, postsRes] = await Promise.all([
         axios.get(`${API_URL}/profiles/${session.user.id}`),
         axios.get(`${API_URL}/posts/user/${session.user.id}`)
       ]);
+      
       setProfile(profileRes.data);
-      setPosts(postsRes.data);
+      
+      if (Array.isArray(postsRes.data)) {
+        setPosts(postsRes.data);
+      } else {
+        setPosts([]);
+        console.error('Expected array for posts, got:', postsRes.data);
+      }
     } catch (err) {
+      console.error('Profile fetch error:', err);
       setError('Failed to load profile data.');
+      setPosts([]);
     } finally {
       setLoading(false);
     }
@@ -44,9 +52,9 @@ export default function Profile({ session }) {
         <div className="bg-[#0A0A0A] border border-white/10 rounded-lg p-10 mb-12 flex flex-col items-center text-center group hover:border-white/20 transition-all">
             <div className="w-24 h-24 rounded-full bg-black border-2 border-white/10 flex items-center justify-center text-4xl font-bold text-white mb-6 group-hover:border-white/30 transition-all overflow-hidden shadow-2xl">
                 {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                    <img src={profile.avatar_url} alt={profile?.username} className="w-full h-full object-cover" />
                 ) : (
-                    (profile?.username || session?.user?.email)?.charAt(0).toUpperCase()
+                    (profile?.username || session?.user?.email || '?')?.charAt(0).toUpperCase()
                 )}
             </div>
             <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">@{profile?.username || 'unknown'}</h1>
@@ -62,19 +70,25 @@ export default function Profile({ session }) {
                 <Layout className="w-4 h-4 text-zinc-600" />
                 <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">Your Activity</h2>
             </div>
-            <span className="text-[10px] font-mono text-zinc-700">{posts.length} UPDATES</span>
+            <span className="text-[10px] font-mono text-zinc-700">{(Array.isArray(posts) ? posts.length : 0)} UPDATES</span>
           </div>
+
+          {error && (
+            <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-md text-red-400 text-xs font-mono mb-6 text-center">
+                {error}
+            </div>
+          )}
 
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 text-zinc-700 animate-spin" />
             </div>
-          ) : posts.length === 0 ? (
+          ) : !Array.isArray(posts) || posts.length === 0 ? (
             <div className="text-center py-20 text-zinc-700 border border-dashed border-white/5 rounded-lg text-sm">
                 You haven't pushed any updates yet.
             </div>
           ) : (
-            posts.map(post => (
+            posts?.map(post => (
               <PostCard 
                 key={post.id} 
                 post={post} 
@@ -85,5 +99,6 @@ export default function Profile({ session }) {
         </div>
       </main>
     </div>
+
   );
 }

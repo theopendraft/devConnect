@@ -5,9 +5,7 @@ import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import PostCard from '../components/PostCard';
 
-const API_URL = import.meta.env.MODE === 'development' 
-  ? 'http://localhost:5000/api' 
-  : '/api';
+const API_URL = '/api';
 
 export default function Search() {
   const [searchParams] = useSearchParams();
@@ -25,10 +23,19 @@ export default function Search() {
 
   const performSearch = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await axios.get(`${API_URL}/search?q=${encodeURIComponent(query)}`);
-      setResults(res.data);
+      if (res.data && typeof res.data === 'object') {
+          setResults({
+              users: Array.isArray(res.data.users) ? res.data.users : [],
+              posts: Array.isArray(res.data.posts) ? res.data.posts : []
+          });
+      } else {
+          setResults({ users: [], posts: [] });
+      }
     } catch (err) {
+      console.error('Search error:', err);
       setError('Search failed. Please try again.');
     } finally {
       setLoading(false);
@@ -53,13 +60,13 @@ export default function Search() {
                 onClick={() => setActiveTab('posts')}
                 className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'posts' ? 'text-white border-b border-white' : 'text-zinc-600 hover:text-zinc-400'}`}
             >
-                Posts ({results.posts.length})
+                Posts ({(Array.isArray(results?.posts) ? results.posts.length : 0)})
             </button>
             <button 
                 onClick={() => setActiveTab('users')}
                 className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'users' ? 'text-white border-b border-white' : 'text-zinc-600 hover:text-zinc-400'}`}
             >
-                People ({results.users.length})
+                People ({(Array.isArray(results?.users) ? results.users.length : 0)})
             </button>
         </div>
 
@@ -73,29 +80,29 @@ export default function Search() {
                 {error}
             </div>
           ) : activeTab === 'posts' ? (
-            results.posts.length === 0 ? (
+            !Array.isArray(results?.posts) || results.posts.length === 0 ? (
                 <div className="text-center py-20 text-zinc-700 border border-dashed border-white/5 rounded-lg text-sm">
                     No technical updates found.
                 </div>
             ) : (
-                results.posts.map(post => (
+                results.posts?.map(post => (
                     <PostCard key={post.id} post={post} onUpdate={performSearch} />
                 ))
             )
           ) : (
-            results.users.length === 0 ? (
+            !Array.isArray(results?.users) || results.users.length === 0 ? (
                 <div className="text-center py-20 text-zinc-700 border border-dashed border-white/5 rounded-lg text-sm">
                     No builders found.
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
-                    {results.users.map(user => (
+                    {results.users?.map(user => (
                         <div key={user.id} className="bg-[#0A0A0A] border border-white/10 p-4 rounded-lg flex items-center gap-4 hover:border-white/20 transition-all group">
                             <div className="w-12 h-12 rounded-full bg-black border border-white/5 flex items-center justify-center text-white font-mono">
-                                {user.username.charAt(0).toUpperCase()}
+                                {user.username?.charAt(0).toUpperCase() || '?'}
                             </div>
                             <div>
-                                <div className="font-bold text-white text-sm">@{user.username}</div>
+                                <div className="font-bold text-white text-sm">@{user.username || 'unknown'}</div>
                                 <div className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{user.description || 'No description provided.'}</div>
                             </div>
                         </div>
@@ -106,5 +113,6 @@ export default function Search() {
         </div>
       </main>
     </div>
+
   );
 }
