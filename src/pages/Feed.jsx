@@ -4,7 +4,9 @@ import { Send, Loader2, MessageSquare, Clock } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { supabase } from '../lib/supabase';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.MODE === 'development' 
+  ? 'http://localhost:5000/api' 
+  : '/api';
 
 export default function Feed({ session }) {
   const [posts, setPosts] = useState([]);
