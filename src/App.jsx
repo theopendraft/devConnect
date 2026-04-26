@@ -5,6 +5,8 @@ import Auth from './pages/Auth';
 import Feed from './pages/Feed';
 import Profile from './pages/Profile';
 import Search from './pages/Search';
+import Admin from './pages/Admin';
+import Landing from './pages/Landing';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -40,19 +42,27 @@ export default function App() {
       <Routes>
         <Route 
           path="/" 
+          element={!session ? <Landing /> : <Navigate to="/feed" />} 
+        />
+        <Route 
+          path="/login" 
           element={!session ? <Auth /> : <Navigate to="/feed" />} 
         />
         <Route 
           path="/feed" 
-          element={session ? <Feed session={session} /> : <Navigate to="/" />} 
+          element={session ? <Feed session={session} /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/profile" 
-          element={session ? <Profile session={session} /> : <Navigate to="/" />} 
+          element={session ? <Profile session={session} /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/search" 
-          element={session ? <Search /> : <Navigate to="/" />} 
+          element={session ? <Search /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/admin" 
+          element={session ? <Admin session={session} /> : <Navigate to="/login" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

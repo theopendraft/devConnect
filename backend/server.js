@@ -135,6 +135,24 @@ app.patch('/api/posts/:postId/like', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/posts/:postId - Delete a post (Admin/Owner functionality)
+app.delete('/api/posts/:postId', authMiddleware, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId);
+
+    if (error) throw error;
+    res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error deleting post' });
+  }
+});
+
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
