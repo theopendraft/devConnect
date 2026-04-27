@@ -44,7 +44,10 @@ export default function Auth() {
 
   const handleOAuth = async (provider) => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin }
+      });
       if (error) throw error;
     } catch (err) {
       setError(`Failed to sign in with ${provider}.`);
