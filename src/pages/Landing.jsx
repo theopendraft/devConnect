@@ -37,7 +37,7 @@ export default function Landing() {
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <a 
-            href="https://github.com/Lalitjindal-code/devconnect" 
+            href="https://github.com/theopendraft/devConnect"
             target="_blank"
             className="w-full sm:w-auto border border-white/10 px-8 py-4 rounded-md font-bold hover:bg-white/5 transition-all"
           >

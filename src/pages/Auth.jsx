@@ -35,9 +35,6 @@ export default function Auth() {
         });
         if (error) throw error;
       }
-      // Added a fake delay since env vars likely missing - mocking success for UI testing
-      await new Promise(r => setTimeout(r, 1000));
-      
     } catch (err) {
       setError(err.message || "An unexpected error occurred. Please try again.");
     } finally {
@@ -183,7 +180,24 @@ export default function Auth() {
             </button>
           </form>
 
-          <div className="text-center mt-8">
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-2">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-xs text-zinc-600">or</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
+          {/* GitHub OAuth */}
+          <button
+            type="button"
+            onClick={() => handleOAuth('github')}
+            className="w-full flex items-center justify-center gap-3 bg-[#0A0A0A] border border-white/10 text-zinc-300 text-sm font-medium py-2.5 rounded-md hover:border-white/20 hover:text-white transition-all"
+          >
+            <Github className="w-4 h-4" />
+            Continue with GitHub
+          </button>
+
+          <div className="text-center mt-6">
             <button
               type="button"
               onClick={toggleMode}
