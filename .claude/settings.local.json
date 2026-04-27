@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone *)",
+      "Bash(mv theopendraftOosddevconnect/.git .)",
+      "Bash(mv theopendraftOosddevconnect/.github .)",
+      "Bash(mv theopendraftOosddevconnect/.gitignore .)",
+      "Bash(mv theopendraftOosddevconnect/* .)",
+      "Bash(rmdir theopendraftOosddevconnect)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(Object.keys\\(p.dependencies\\)\\)\")",
+      "Bash(git commit *)"
+    ]
+  }
+}
