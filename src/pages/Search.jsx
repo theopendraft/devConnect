@@ -19,6 +19,7 @@ export default function Search() {
     if (query) {
       performSearch();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const performSearch = async () => {

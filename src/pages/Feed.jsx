@@ -22,6 +22,7 @@ export default function Feed({ session }) {
 
   useEffect(() => {
     fetchPosts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Supabase Realtime: silently refresh on new post inserts
@@ -37,6 +38,7 @@ export default function Feed({ session }) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const buildHeaders = () =>

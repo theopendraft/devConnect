@@ -22,6 +22,7 @@ export default function Profile({ session }) {
 
   useEffect(() => {
     if (session?.user?.id) fetchProfileAndPosts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const fetchProfileAndPosts = async () => {

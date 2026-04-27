@@ -49,7 +49,7 @@ export default function Auth() {
         options: { redirectTo: window.location.origin }
       });
       if (error) throw error;
-    } catch (err) {
+    } catch {
       setError(`Failed to sign in with ${provider}.`);
     }
   };
